@@ -26,54 +26,50 @@ pid_return_t pid_init(pid_inst_t *pid, pid_conf_t pid_settings)
 {
 	pid_return_t pid_return;
 	
-	/*Set data pointers*/
-	if(pid_settings.output == 0 || pid_settings.input == 0 || pid_settings.setpoint == 0 || pid_settings.current_time_ms == 0)
+	/*NULL pointer check*/
+	if(pid_settings.output == 0 || pid_settings.input == 0 || pid_settings.setpoint == 0)
 	{
-		return NULL_POINTER;
+		pid_return = NULL_POINTER;
 	}
+	
 	else
 	{
+		/*Set data pointers*/
 		pid->output = pid_settings.output;
 		pid->input = pid_settings.input;
 		pid->setpoint = pid_settings.setpoint;
-		pid->current_time_ms = pid_settings.current_time_ms;
+		
+		/*Set direction*/
+		pid->direction = pid_settings.direction;
+		
+		/*Set gain*/
+		pid_return = pid_set_tuning(pid, pid_settings.kp, pid_settings.ki, pid_settings.kd);
+		
+		if(pid_return == SUCCESS)
+		{
+			/*Set output limits*/
+			pid_return = pid_set_output_limits(pid, pid_settings.out_min, pid_settings.out_max);
+			
+			if(pid_return == SUCCESS)
+			{
+				/*Turn on PID*/
+				pid->pid_mode = AUTOMATIC;
+			}
+		}
 	}
 	
-	/*Set configuration*/
-	pid->sample_time_ms = pid_settings.sample_time_ms;
-	pid->direction = pid_settings.direction;
-	
-	pid_return = pid_set_tuning(pid, pid_settings.kp, pid_settings.ki, pid_settings.kd);
-	if(pid_return != SUCCESS)
-	{
-		return pid_return;
-	}
-	
-	pid_return = pid_set_output_limits(pid, pid_settings.out_min, pid_settings.out_max);
-	if(pid_return != SUCCESS)
-	{
-		return pid_return;
-	}
-	
-	/*Turn on PID*/
-	pid->pid_mode = AUTOMATIC;
-	
-	/*Record time*/
-	pid->last_time_ms = *pid->current_time_ms;
-	
-	return SUCCESS;
+	return pid_return;
 }
 
 /******************************************************************************
 *  \brief PID task
 *
-*  \note needs to be called faster then sample time
-*        Returns SUCCESS for new output or MANUAL_MODE for nothing done
+*  \note Returns SUCCESS for new output or MANUAL_MODE for nothing done
 *        Derivative on Measurement used
 ******************************************************************************/
 pid_return_t pid_task(pid_inst_t *pid)
 {
-	uint32_t time_ms   = 0;
+	pid_return_t pid_return = MANUAL_MODE;
 	float input        = 0;
 	float error        = 0;
 	float d_input      = 0;
@@ -82,44 +78,36 @@ pid_return_t pid_task(pid_inst_t *pid)
 	/*MANUAL mode returns without doing anything*/
 	if(pid->pid_mode == AUTOMATIC)
 	{
-		/*Get current time*/
-		time_ms = *pid->current_time_ms;
-		
-		/*Check if it is time to calculate PID*/
-		if((time_ms - pid->last_time_ms) >= pid->sample_time_ms)
-		{
-			/*Compute all the working error variables*/
-			input        = *pid->input;
-			error        = *pid->setpoint - input;
-			d_input = input - pid->last_input;
+		/*Compute all the working error variables*/
+		input        = *pid->input;
+		error        = *pid->setpoint - input;
+		d_input = input - pid->last_input;
 			
-			/****Calculate P component****/
-			pid->p_component = pid->kp * error;
+		/****Calculate P component****/
+		pid->p_component = pid->kp * error;
 			
-			/****Calculate I component****/
-			pid->i_component += pid->ki * error;
+		/****Calculate I component****/
+		pid->i_component += pid->ki * error;
 			
-			/****Calculate D component****/
-			pid->d_component = pid->kd * d_input;
+		/****Calculate D component****/
+		pid->d_component = pid->kd * d_input;
 			
-			/*Sum PID components*/
-			output = pid->p_component + pid->i_component - pid->d_component;
+		/*Sum PID components*/
+		output = pid->p_component + pid->i_component - pid->d_component;
 			
-			/*Clamp output to limits and windup protection*/
-			clamp_and_windup(pid->out_min, pid->out_max, &pid->i_component, &output);
+		/*Clamp output to limits and windup protection*/
+		clamp_and_windup(pid->out_min, pid->out_max, &pid->i_component, &output);
 			
-			/*Set output*/
-			*pid->output = output;
+		/*Set output*/
+		*pid->output = output;
 			
-			/*Remember some variables for next time*/
-			pid->last_input = input;
-			pid->last_time_ms = time_ms;
+		/*Remember some variables for next time*/
+		pid->last_input = input;
 
-			return SUCCESS;
-		}
+		pid_return = SUCCESS;
 	}
 	
-	return MANUAL_MODE;
+	return pid_return;
 }
 
 
@@ -130,56 +118,37 @@ pid_return_t pid_task(pid_inst_t *pid)
 ******************************************************************************/
 pid_return_t pid_set_tuning(pid_inst_t *pid, float kp, float ki, float kd)
 {
-	float sample_time_s;
+	pid_return_t pid_return = SUCCESS;
 	
 	/*Keep only positive PID parameters*/
 	if(kp < 0 || ki < 0 || kd < 0)
 	{
-		return NEGATIVE_PARAM;
+		pid_return =  NEGATIVE_PARAM;
 	}
 	
-	/*Remove residual sum from integrator on ki of zero*/
-	if(ki <= 0.0)
+	else
 	{
-		pid->i_component = 0.0;
+		/*Remove residual sum from integrator on ki of zero*/
+		if(ki <= 0.0)
+		{
+			pid->i_component = 0.0;
+		}
+		
+		/*Set new PID gain values*/
+		pid->kp = kp;
+		pid->ki = ki;
+		pid->kd = kd;
+		
+		/*Set PID direction*/
+		if(pid->direction == REVERSE)
+		{
+			pid->kp = -pid->kp;
+			pid->ki = -pid->ki;
+			pid->kd = -pid->kd;
+		}
 	}
 	
-	/*Set display PID parameters*/
-	pid->disp_kp = kp;
-	pid->disp_ki = ki;
-	pid->disp_kd = kd;
-	
-	/*Rescale PID parameters for new sample time in mS*/
-	sample_time_s = (float)pid->sample_time_ms / 1000.0;
-	pid->kp = kp;
-	pid->ki = ki * sample_time_s;
-	pid->kd = kd / sample_time_s;
-	
-	/*Set PID direction*/
-	if(pid->direction == REVERSE)
-	{
-		pid->kp = -pid->kp;
-		pid->ki = -pid->ki;
-		pid->kd = -pid->kd;
-	}
-	
-	return SUCCESS;
-}
-
-/******************************************************************************
-*  \brief Set sample time
-*
-*  \note sets the period, in Milliseconds, at which the calculation is performed
-******************************************************************************/
-void pid_set_sample_time_ms(pid_inst_t *pid, uint32_t sample_time_ms)
-{
-	float ratio;
-	
-	ratio  = (float)sample_time_ms / (float)pid->sample_time_ms;
-	
-	pid->ki *= ratio;
-	pid->kd /= ratio;
-	pid->sample_time_ms = sample_time_ms;
+	return pid_return;
 }
 
 
@@ -190,17 +159,22 @@ void pid_set_sample_time_ms(pid_inst_t *pid, uint32_t sample_time_ms)
 ******************************************************************************/
 pid_return_t pid_set_output_limits(pid_inst_t *pid, float min, float max)
 {
+	pid_return_t pid_return = SUCCESS;
+	
 	if(min >= max)
 	{
-		return MIN_GREATER_EQUAL_MAX;
+		pid_return = MIN_GREATER_EQUAL_MAX;
 	}
 	
-	pid->out_min = min;
-	pid->out_max = max;
+	else
+	{
+		pid->out_min = min;
+		pid->out_max = max;
+		
+		clamp_and_windup(min, max, &pid->i_component, pid->output);
+	}
 	
-	clamp_and_windup(min, max, &pid->i_component, pid->output);
-	
-	return SUCCESS;
+	return pid_return;
 }
 
 /******************************************************************************
