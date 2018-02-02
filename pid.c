@@ -18,16 +18,36 @@ static inline void clamp_and_windup(float min, float max, float *i_component, fl
 
 
 /******************************************************************************
+*  \brief PID get config defaults
+*
+*  \note
+******************************************************************************/
+void pid_get_config_defaults(pid_conf_t *pid_conf)
+{
+	pid_conf->kp = 0;
+	pid_conf->ki = 0;
+	pid_conf->kd = 0;
+	
+	pid_conf->direction = 0;
+	pid_conf->out_min = 0;
+	pid_conf->out_max = 0;
+	
+	pid_conf->input = 0;
+	pid_conf->output = 0;
+	pid_conf->setpoint = 0;
+}
+
+/******************************************************************************
 *  \brief PID Init
 *
 *  \note
 ******************************************************************************/
-pid_return_t pid_init(pid_inst_t *pid, pid_conf_t pid_settings)
+pid_return_t pid_init(pid_inst_t *pid, pid_conf_t pid_conf)
 {
 	pid_return_t pid_return;
 	
 	/*NULL pointer check*/
-	if(pid_settings.output == 0 || pid_settings.input == 0 || pid_settings.setpoint == 0)
+	if(pid_conf.output == 0 || pid_conf.input == 0 || pid_conf.setpoint == 0)
 	{
 		pid_return = NULL_POINTER;
 	}
@@ -35,20 +55,20 @@ pid_return_t pid_init(pid_inst_t *pid, pid_conf_t pid_settings)
 	else
 	{
 		/*Set data pointers*/
-		pid->output = pid_settings.output;
-		pid->input = pid_settings.input;
-		pid->setpoint = pid_settings.setpoint;
+		pid->output = pid_conf.output;
+		pid->input = pid_conf.input;
+		pid->setpoint = pid_conf.setpoint;
 		
 		/*Set direction*/
-		pid->direction = pid_settings.direction;
+		pid->direction = pid_conf.direction;
 		
 		/*Set gain*/
-		pid_return = pid_set_tuning(pid, pid_settings.kp, pid_settings.ki, pid_settings.kd);
+		pid_return = pid_set_tuning(pid, pid_conf.kp, pid_conf.ki, pid_conf.kd);
 		
 		if(pid_return == SUCCESS)
 		{
 			/*Set output limits*/
-			pid_return = pid_set_output_limits(pid, pid_settings.out_min, pid_settings.out_max);
+			pid_return = pid_set_output_limits(pid, pid_conf.out_min, pid_conf.out_max);
 			
 			if(pid_return == SUCCESS)
 			{

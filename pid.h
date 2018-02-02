@@ -84,7 +84,8 @@ typedef struct
 /******************************************************************************
 * Prototypes
 ******************************************************************************/
-pid_return_t pid_init(pid_inst_t *pid, pid_conf_t pid_settings);
+void pid_get_config_defaults(pid_conf_t *pid_conf);
+pid_return_t pid_init(pid_inst_t *pid, pid_conf_t pid_conf);
 pid_return_t pid_task(pid_inst_t *pid);
 pid_return_t pid_set_tuning(pid_inst_t *pid, float kp, float ki, float kd);
 pid_return_t pid_set_output_limits(pid_inst_t *pid, float min, float max);
