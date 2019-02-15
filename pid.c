@@ -148,7 +148,7 @@ pid_return_t pid_task(pid_inst_t *pid)
 			
 		/****Calculate I component****/
 		/*Remove residual sum from integrator for ki of zero*/
-		if(pid->conf.ki <= 0.0)
+		if(pid->conf.ki == 0.0)
 		{
 			pid->i_component = 0.0;
 		}
@@ -263,7 +263,7 @@ void pid_set_mode(pid_inst_t *pid, pid_mode_t pid_mode)
 	/*If going from MANUAL to AUTOMATIC*/
 	if((pid->conf.pid_mode == MANUAL) && (pid_mode == AUTOMATIC))
 	{
-		//pid->i_component  = *pid->output;
+		pid->i_component  = *pid->conf.output;
 		pid->last_input   = *pid->conf.input;
 		pid->last_tick_ms = *pid->conf.tick_ms;
 	}
