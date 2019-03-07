@@ -159,7 +159,7 @@ pid_return_t pid_task(pid_inst_t *pid)
 		}
 			
 		/****Calculate D component****/
-		pid->d_component = pid->conf.kd * (d_input / dt);
+		pid->d_component = -1 * (pid->conf.kd * (d_input / dt));
 		
 		/*Component Limits*/
 		pid->p_component = PID_LIM(pid->p_component, pid->conf.p_min, pid->conf.p_max);
@@ -167,7 +167,7 @@ pid_return_t pid_task(pid_inst_t *pid)
 		pid->d_component = PID_LIM(pid->d_component, pid->conf.d_min, pid->conf.d_max);
 		
 		/*Sum PID components*/
-		output = pid->p_component + pid->i_component - pid->d_component;
+		output = pid->p_component + pid->i_component + pid->d_component;
 		
 		/*Set output with limit*/
 		*pid->conf.output = PID_LIM(output, pid->conf.out_min, pid->conf.out_max);
