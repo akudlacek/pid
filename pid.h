@@ -56,7 +56,7 @@ typedef struct
 	float *input;
 	float *output;
 	float *setpoint;
-	uint32_t *tick_ms;
+	const volatile uint32_t *tick_ms;
 } pid_conf_t;
 
 typedef struct
