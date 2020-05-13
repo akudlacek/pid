@@ -32,7 +32,7 @@
 *
 *  \note
 ******************************************************************************/
-void pid_get_config_defaults(pid_conf_t *pid_conf)
+void pid_get_config_defaults(pid_conf_t * const pid_conf)
 {
 	pid_conf->kp = 0;
 	pid_conf->ki = 0;
@@ -61,7 +61,7 @@ void pid_get_config_defaults(pid_conf_t *pid_conf)
 *
 *  \note
 ******************************************************************************/
-pid_return_t pid_init(pid_inst_t *pid, pid_conf_t pid_conf)
+pid_return_t pid_init(pid_inst_t * const pid, const pid_conf_t pid_conf)
 {
 	pid_return_t pid_return;
 	
@@ -119,7 +119,7 @@ pid_return_t pid_init(pid_inst_t *pid, pid_conf_t pid_conf)
 *  \note Returns SUCCESS for new output or MANUAL_MODE for nothing done
 *        Derivative on Measurement used
 ******************************************************************************/
-pid_return_t pid_task(pid_inst_t *pid)
+pid_return_t pid_task(pid_inst_t * const pid)
 {
 	pid_return_t pid_return = MANUAL_MODE;
 	float input             = 0;
@@ -195,7 +195,7 @@ pid_return_t pid_task(pid_inst_t *pid)
 *
 *  \note
 ******************************************************************************/
-void pid_set_kp(pid_inst_t *pid, float kp)
+void pid_set_kp(pid_inst_t * const pid, const float kp)
 {
 	pid->conf.kp = kp;
 }
@@ -205,7 +205,7 @@ void pid_set_kp(pid_inst_t *pid, float kp)
 *
 *  \note
 ******************************************************************************/
-void pid_set_ki(pid_inst_t *pid, float ki)
+void pid_set_ki(pid_inst_t * const pid, const float ki)
 {
 	pid->conf.ki = ki;
 }
@@ -215,7 +215,7 @@ void pid_set_ki(pid_inst_t *pid, float ki)
 *
 *  \note
 ******************************************************************************/
-void pid_set_kd(pid_inst_t *pid, float kd)
+void pid_set_kd(pid_inst_t * const pid, const float kd)
 {
 	pid->conf.kd = kd;
 }
@@ -225,7 +225,7 @@ void pid_set_kd(pid_inst_t *pid, float kd)
 *
 *  \note
 ******************************************************************************/
-void pid_set_kt(pid_inst_t *pid, float kt)
+void pid_set_kt(pid_inst_t * const pid, const float kt)
 {
 	pid->conf.kt = kt;
 }
@@ -235,7 +235,7 @@ void pid_set_kt(pid_inst_t *pid, float kt)
 *
 *  \note
 ******************************************************************************/
-pid_return_t pid_set_output_limits(pid_inst_t *pid, float min, float max)
+pid_return_t pid_set_output_limits(pid_inst_t * const pid, const float min, const float max)
 {
 	if(min >= max)
 	{
@@ -258,7 +258,7 @@ pid_return_t pid_set_output_limits(pid_inst_t *pid, float min, float max)
 *
 *  \note AUTOMATIC = PID controls output, MANUAL = user controls output
 ******************************************************************************/
-void pid_set_mode(pid_inst_t *pid, pid_mode_t pid_mode)
+void pid_set_mode(pid_inst_t * const pid, const pid_mode_t pid_mode)
 {
 	/*If going from MANUAL to AUTOMATIC*/
 	if((pid->conf.pid_mode == MANUAL) && (pid_mode == AUTOMATIC))
@@ -276,7 +276,7 @@ void pid_set_mode(pid_inst_t *pid, pid_mode_t pid_mode)
 *
 *  \note
 ******************************************************************************/
-float pid_get_kp(pid_inst_t pid)
+float pid_get_kp(const pid_inst_t pid)
 {
 	return pid.conf.kp;
 }
@@ -286,7 +286,7 @@ float pid_get_kp(pid_inst_t pid)
 *
 *  \note
 ******************************************************************************/
-float pid_get_ki(pid_inst_t pid)
+float pid_get_ki(const pid_inst_t pid)
 {
 	return pid.conf.ki;
 }
@@ -296,7 +296,7 @@ float pid_get_ki(pid_inst_t pid)
 *
 *  \note
 ******************************************************************************/
-float pid_get_kd(pid_inst_t pid)
+float pid_get_kd(const pid_inst_t pid)
 {
 	return pid.conf.kd;
 }
@@ -306,7 +306,7 @@ float pid_get_kd(pid_inst_t pid)
 *
 *  \note
 ******************************************************************************/
-float pid_get_kt(pid_inst_t pid)
+float pid_get_kt(const pid_inst_t pid)
 {
 	return pid.conf.kt;
 }
@@ -316,7 +316,7 @@ float pid_get_kt(pid_inst_t pid)
 *
 *  \note
 ******************************************************************************/
-float pid_get_out_min(pid_inst_t pid)
+float pid_get_out_min(const pid_inst_t pid)
 {
 	return pid.conf.out_min;
 }
@@ -326,7 +326,7 @@ float pid_get_out_min(pid_inst_t pid)
 *
 *  \note
 ******************************************************************************/
-float pid_get_out_max(pid_inst_t pid)
+float pid_get_out_max(const pid_inst_t pid)
 {
 	return pid.conf.out_max;
 }
@@ -336,7 +336,7 @@ float pid_get_out_max(pid_inst_t pid)
 *
 *  \note
 ******************************************************************************/
-pid_mode_t pid_get_mode(pid_inst_t pid)
+pid_mode_t pid_get_mode(const pid_inst_t pid)
 {
 	return pid.conf.pid_mode;
 }
@@ -346,7 +346,7 @@ pid_mode_t pid_get_mode(pid_inst_t pid)
 *
 *  \note
 ******************************************************************************/
-float pid_get_p_component(pid_inst_t pid)
+float pid_get_p_component(const pid_inst_t pid)
 {
 	return pid.p_component;
 }
@@ -356,7 +356,7 @@ float pid_get_p_component(pid_inst_t pid)
 *
 *  \note
 ******************************************************************************/
-float pid_get_i_component(pid_inst_t pid)
+float pid_get_i_component(const pid_inst_t pid)
 {
 	return pid.i_component;
 }
@@ -366,7 +366,7 @@ float pid_get_i_component(pid_inst_t pid)
 *
 *  \note
 ******************************************************************************/
-float pid_get_d_component(pid_inst_t pid)
+float pid_get_d_component(const pid_inst_t pid)
 {
 	return pid.d_component;
 }
@@ -376,7 +376,7 @@ float pid_get_d_component(pid_inst_t pid)
 *
 *  \note
 ******************************************************************************/
-float pid_get_error(pid_inst_t pid)
+float pid_get_error(const pid_inst_t pid)
 {
 	return pid.error;
 }
