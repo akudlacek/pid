@@ -55,7 +55,7 @@ typedef struct pid_conf_t
 	//Data pointers
 	float *input;
 	float *output;
-	float *setpoint;
+	const volatile float *setpoint;
 	const volatile uint32_t *tick_ms;
 } pid_conf_t;
 
