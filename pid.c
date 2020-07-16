@@ -50,10 +50,10 @@ void pid_get_config_defaults(pid_conf_t * const pid_conf)
 	pid_conf->out_max   = 0;
 	pid_conf->pid_mode  = MANUAL;
 	
-	pid_conf->input    = 0;
-	pid_conf->output   = 0;
-	pid_conf->setpoint = 0;
-	pid_conf->tick_ms  = 0;
+	pid_conf->input_ptr    = 0;
+	pid_conf->output_ptr   = 0;
+	pid_conf->setpoint_ptr = 0;
+	pid_conf->tick_ptr  = 0;
 }
 
 /******************************************************************************
@@ -65,41 +65,30 @@ pid_return_t pid_init(pid_inst_t * const pid, const pid_conf_t pid_conf)
 {
 	pid_return_t pid_return;
 	
-	/*Clear PID instance*/
+	/*NULL pointer check*/
+	if(pid_conf.input_ptr == 0 || pid_conf.output_ptr == 0 || pid_conf.setpoint_ptr == 0 || pid_conf.tick_ptr == 0)
+	{
+		return NULL_POINTER;
+	}
+	
+	/*Conf*/
+	pid->conf = pid_conf;
+	
+	/*Inst*/
 	pid->last_input      = 0;
 	pid->p_component     = 0;
 	pid->i_component     = 0;
 	pid->d_component     = 0;
 	pid->error           = 0;
-	pid->last_tick_ms    = 0;
+	pid->last_tick       = *pid->conf.tick_ptr;
 	pid->last_output     = 0;
 	pid->last_output_sat = 0;
-	
-	/*NULL pointer check*/
-	if(pid_conf.input == 0 || pid_conf.output == 0 || pid_conf.setpoint == 0 || pid_conf.tick_ms == 0)
-	{
-		return NULL_POINTER;
-	}
-	
-	/*Set data pointers*/
-	pid->conf.input    = pid_conf.input;
-	pid->conf.output   = pid_conf.output;
-	pid->conf.setpoint = pid_conf.setpoint;
-	pid->conf.tick_ms  = pid_conf.tick_ms;
 		
 	/*Set gains*/
 	pid_set_kp(pid, pid_conf.kp);
 	pid_set_ki(pid, pid_conf.ki);
 	pid_set_kd(pid, pid_conf.kd);
 	pid_set_kt(pid, pid_conf.kt);
-	
-	/*Set PID limits*/
-	pid->conf.p_max = pid_conf.p_max;
-	pid->conf.p_min = pid_conf.p_min;
-	pid->conf.i_max = pid_conf.i_max;
-	pid->conf.i_min = pid_conf.i_min;
-	pid->conf.d_max = pid_conf.d_max;
-	pid->conf.d_min = pid_conf.d_min;
 		
 	/*Set output limits*/
 	pid_return = pid_set_output_limits(pid, pid_conf.out_min, pid_conf.out_max);
@@ -125,8 +114,8 @@ pid_return_t pid_task(pid_inst_t * const pid)
 	float input             = 0;
 	float d_input           = 0;
 	float output            = 0;
-	uint32_t tick_ms        = *pid->conf.tick_ms;
-	float dt                = (float)(tick_ms - pid->last_tick_ms);
+	uint32_t tick           = *pid->conf.tick_ptr;
+	float dt                = (float)(tick - pid->last_tick);
 	float saturation_error  = 0;
 	
 	/*Check for nonzero dt*/
@@ -139,8 +128,8 @@ pid_return_t pid_task(pid_inst_t * const pid)
 	else if(pid->conf.pid_mode == AUTOMATIC)
 	{
 		/*Compute all the working error variables*/
-		input             = *pid->conf.input;
-		pid->error        = *pid->conf.setpoint - input;
+		input             = *pid->conf.input_ptr;
+		pid->error        = *pid->conf.setpoint_ptr - input;
 		d_input           = input - pid->last_input;
 			
 		/****Calculate P component****/
@@ -170,18 +159,18 @@ pid_return_t pid_task(pid_inst_t * const pid)
 		output = pid->p_component + pid->i_component + pid->d_component;
 		
 		/*Set output with limit*/
-		*pid->conf.output = PID_LIM(output, pid->conf.out_min, pid->conf.out_max);
+		*pid->conf.output_ptr = PID_LIM(output, pid->conf.out_min, pid->conf.out_max);
 			
 		/*Remember some variables for next time*/
 		pid->last_input      = input;
-		pid->last_tick_ms    = tick_ms;
+		pid->last_tick    = tick;
 		pid->last_output     = output;
-		pid->last_output_sat = *pid->conf.output;
+		pid->last_output_sat = *pid->conf.output_ptr;
 
 		pid_return = SUCCESS;
 		
 		/*Check for float errors*/
-		if(!isnormal(*pid->conf.output) && *pid->conf.output != 0.0)
+		if(!isnormal(*pid->conf.output_ptr) && *pid->conf.output_ptr != 0.0)
 		{
 			pid_return = OUTPUT_ERR;
 		}
@@ -247,7 +236,7 @@ pid_return_t pid_set_output_limits(pid_inst_t * const pid, const float min, cons
 		pid->conf.out_min = min;
 		pid->conf.out_max = max;
 		
-		*pid->conf.output = PID_LIM(*pid->conf.output, pid->conf.out_min, pid->conf.out_max);
+		*pid->conf.output_ptr = PID_LIM(*pid->conf.output_ptr, pid->conf.out_min, pid->conf.out_max);
 	}
 	
 	return SUCCESS;
@@ -263,9 +252,9 @@ void pid_set_mode(pid_inst_t * const pid, const pid_mode_t pid_mode)
 	/*If going from MANUAL to AUTOMATIC*/
 	if((pid->conf.pid_mode == MANUAL) && (pid_mode == AUTOMATIC))
 	{
-		pid->i_component  = *pid->conf.output;
-		pid->last_input   = *pid->conf.input;
-		pid->last_tick_ms = *pid->conf.tick_ms;
+		pid->i_component  = *pid->conf.output_ptr;
+		pid->last_input   = *pid->conf.input_ptr;
+		pid->last_tick = *pid->conf.tick_ptr;
 	}
 	
 	pid->conf.pid_mode = pid_mode;

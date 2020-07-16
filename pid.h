@@ -53,10 +53,10 @@ typedef struct pid_conf_t
 	pid_mode_t pid_mode;
 	
 	//Data pointers
-	float *input;
-	float *output;
-	const volatile float *setpoint;
-	const volatile uint32_t *tick_ms;
+	float *input_ptr;
+	float *output_ptr;
+	const volatile float *setpoint_ptr;
+	const volatile uint32_t *tick_ptr;
 } pid_conf_t;
 
 typedef struct pid_inst_t
@@ -70,7 +70,7 @@ typedef struct pid_inst_t
 	float i_component;
 	float d_component;
 	float error;
-	uint32_t last_tick_ms;
+	uint32_t last_tick;
 	float last_output;
 	float last_output_sat;
 } pid_inst_t;
