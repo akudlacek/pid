@@ -38,18 +38,18 @@ void pid_get_config_defaults(pid_conf_t * const pid_conf)
 	pid_conf->ki = 0;
 	pid_conf->kd = 0;
 	pid_conf->kt = 0;
-	
+
 	pid_conf->p_max = 0;
 	pid_conf->p_min = 0;
 	pid_conf->i_max = 0;
 	pid_conf->i_min = 0;
 	pid_conf->d_max = 0;
 	pid_conf->d_min = 0;
-	
+
 	pid_conf->out_min   = 0;
 	pid_conf->out_max   = 0;
 	pid_conf->pid_mode  = MANUAL;
-	
+
 	pid_conf->input_ptr    = 0;
 	pid_conf->output_ptr   = 0;
 	pid_conf->setpoint_ptr = 0;
@@ -64,16 +64,16 @@ void pid_get_config_defaults(pid_conf_t * const pid_conf)
 pid_return_t pid_init(pid_inst_t * const pid, const pid_conf_t pid_conf)
 {
 	pid_return_t pid_return;
-	
+
 	/*NULL pointer check*/
 	if(pid_conf.input_ptr == 0 || pid_conf.output_ptr == 0 || pid_conf.setpoint_ptr == 0 || pid_conf.tick_ptr == 0)
 	{
 		return NULL_POINTER;
 	}
-	
+
 	/*Conf*/
 	pid->conf = pid_conf;
-	
+
 	/*Inst*/
 	pid->last_input      = 0;
 	pid->p_component     = 0;
@@ -83,22 +83,22 @@ pid_return_t pid_init(pid_inst_t * const pid, const pid_conf_t pid_conf)
 	pid->last_tick       = *pid->conf.tick_ptr;
 	pid->last_output     = 0;
 	pid->last_output_sat = 0;
-		
+
 	/*Set gains*/
 	pid_set_kp(pid, pid_conf.kp);
 	pid_set_ki(pid, pid_conf.ki);
 	pid_set_kd(pid, pid_conf.kd);
 	pid_set_kt(pid, pid_conf.kt);
-		
+
 	/*Set output limits*/
 	pid_return = pid_set_output_limits(pid, pid_conf.out_min, pid_conf.out_max);
-			
+
 	if(pid_return == SUCCESS)
 	{
 		/*Turn on PID*/
 		pid_set_mode(pid, AUTOMATIC);
 	}
-	
+
 	return pid_return;
 }
 
@@ -117,13 +117,13 @@ pid_return_t pid_task(pid_inst_t * const pid)
 	uint32_t tick           = *pid->conf.tick_ptr;
 	float dt                = (float)(tick - pid->last_tick);
 	float saturation_error  = 0;
-	
+
 	/*Check for nonzero dt*/
 	if(dt <= 0.0)
 	{
 		pid_return = DT_ZERO;
 	}
-	
+
 	/*MANUAL mode returns without doing anything*/
 	else if(pid->conf.pid_mode == AUTOMATIC)
 	{
@@ -131,10 +131,10 @@ pid_return_t pid_task(pid_inst_t * const pid)
 		input             = *pid->conf.input_ptr;
 		pid->error        = *pid->conf.setpoint_ptr - input;
 		d_input           = input - pid->last_input;
-			
+
 		/****Calculate P component****/
 		pid->p_component = pid->conf.kp * pid->error;
-			
+
 		/****Calculate I component****/
 		/*Remove residual sum from integrator for ki of zero*/
 		if(pid->conf.ki == 0.0)
@@ -146,36 +146,36 @@ pid_return_t pid_task(pid_inst_t * const pid)
 			saturation_error = pid->last_output_sat - pid->last_output;
 			pid->i_component += ((pid->conf.ki * pid->error) + (pid->conf.kt * saturation_error)) * dt;
 		}
-			
+
 		/****Calculate D component****/
 		pid->d_component = -1 * (pid->conf.kd * (d_input / dt));
-		
+
 		/*Component Limits*/
 		pid->p_component = PID_LIM(pid->p_component, pid->conf.p_min, pid->conf.p_max);
 		pid->i_component = PID_LIM(pid->i_component, pid->conf.i_min, pid->conf.i_max);
 		pid->d_component = PID_LIM(pid->d_component, pid->conf.d_min, pid->conf.d_max);
-		
+
 		/*Sum PID components*/
 		output = pid->p_component + pid->i_component + pid->d_component;
-		
+
 		/*Set output with limit*/
 		*pid->conf.output_ptr = PID_LIM(output, pid->conf.out_min, pid->conf.out_max);
-			
+
 		/*Remember some variables for next time*/
 		pid->last_input      = input;
-		pid->last_tick    = tick;
+		pid->last_tick       = tick;
 		pid->last_output     = output;
 		pid->last_output_sat = *pid->conf.output_ptr;
 
 		pid_return = SUCCESS;
-		
+
 		/*Check for float errors*/
 		if(!isnormal(*pid->conf.output_ptr) && *pid->conf.output_ptr != 0.0)
 		{
 			pid_return = OUTPUT_ERR;
 		}
 	}
-	
+
 	return pid_return;
 }
 
@@ -230,15 +230,15 @@ pid_return_t pid_set_output_limits(pid_inst_t * const pid, const float min, cons
 	{
 		return MIN_GREATER_EQUAL_MAX;
 	}
-	
+
 	else
 	{
 		pid->conf.out_min = min;
 		pid->conf.out_max = max;
-		
+
 		*pid->conf.output_ptr = PID_LIM(*pid->conf.output_ptr, pid->conf.out_min, pid->conf.out_max);
 	}
-	
+
 	return SUCCESS;
 }
 
@@ -256,7 +256,7 @@ void pid_set_mode(pid_inst_t * const pid, const pid_mode_t pid_mode)
 		pid->last_input   = *pid->conf.input_ptr;
 		pid->last_tick = *pid->conf.tick_ptr;
 	}
-	
+
 	pid->conf.pid_mode = pid_mode;
 }
 
