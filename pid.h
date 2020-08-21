@@ -39,7 +39,10 @@ typedef struct pid_conf_t
 	float ki;                     //Integral gain
 	float kd;                     //Derivative gain, derivative on measurement not filtered
 	float kt;                     //Saturation tracking gain: suggested kt = sqrt(1/ki*1/kd)
-	
+
+	//Filter
+	float d_filter;               //0 no filtering, >0 low pass filtering, larger the lower
+
 	//PID component limits
 	float p_max;
 	float p_min;
@@ -49,9 +52,9 @@ typedef struct pid_conf_t
 	float d_min;
 	float out_min;
 	float out_max;
-	
+
 	pid_mode_t pid_mode;
-	
+
 	//Data pointers
 	float *input_ptr;
 	float *output_ptr;
@@ -63,9 +66,10 @@ typedef struct pid_inst_t
 {
 	//PID configuration
 	pid_conf_t conf;
-	
+
 	//Dynamic data
 	float last_input;
+	float d_input;       //derivative of the input
 	float p_component;
 	float i_component;
 	float d_component;
@@ -87,6 +91,7 @@ void         pid_set_kp             (pid_inst_t * const pid, const float kp);
 void         pid_set_ki             (pid_inst_t * const pid, const float ki);
 void         pid_set_kd             (pid_inst_t * const pid, const float kd);
 void         pid_set_kt             (pid_inst_t * const pid, const float kt);
+void         pid_set_d_filter       (pid_inst_t * const pid, const float d_filter);
 pid_return_t pid_set_output_limits  (pid_inst_t * const pid, const float min, const float max);
 void         pid_set_mode           (pid_inst_t * const pid, const pid_mode_t pid_mode);
 
@@ -94,6 +99,8 @@ float        pid_get_kp             (const pid_inst_t pid);
 float        pid_get_ki             (const pid_inst_t pid);
 float        pid_get_kd             (const pid_inst_t pid);
 float        pid_get_kt             (const pid_inst_t pid);
+float        pid_get_d_filter       (const pid_inst_t pid);
+float        pid_get_d_input        (const pid_inst_t pid);
 float        pid_get_out_min        (const pid_inst_t pid);
 float        pid_get_out_max        (const pid_inst_t pid);
 pid_mode_t   pid_get_mode           (const pid_inst_t pid);
