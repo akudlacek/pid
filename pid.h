@@ -38,6 +38,7 @@ typedef struct pid_conf_t
 	float kp;                     //Proportional gain
 	float ki;                     //Integral gain
 	float kd;                     //Derivative gain, derivative on measurement not filtered
+	//todo: Document kt a little better. Double check the suggested kt. Doesn't seem right
 	float kt;                     //Saturation tracking gain: suggested kt = sqrt(1/ki*1/kd)
 
 	//Filter
