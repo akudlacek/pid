@@ -119,11 +119,12 @@ pid_return_t pid_task(pid_inst_t * const pid)
 	float fb_in             = 0;
 	float output            = 0;
 	uint32_t tick           = *pid->conf.tick_ptr;
-	float dt                = (float)(tick - pid->last_tick);
 	float saturation_error  = 0;
+	
+	pid->dt = (tick - pid->last_tick);
 
 	/*Check for nonzero dt*/
-	if(dt <= 0.0)
+	if(pid->dt == 0)
 	{
 		pid_return = DT_ZERO;
 	}
@@ -139,11 +140,11 @@ pid_return_t pid_task(pid_inst_t * const pid)
 		if(pid->conf.d_filter > 0.0)
 		{
 			pid->d_fb_in      -= pid->d_fb_in / (pid->conf.d_filter + 1.0);
-			pid->d_fb_in      += ((fb_in - pid->last_fb_in) / dt) / (pid->conf.d_filter + 1.0);
+			pid->d_fb_in      += ((fb_in - pid->last_fb_in) / (float)pid->dt) / (pid->conf.d_filter + 1.0);
 		}
 		else
 		{
-			pid->d_fb_in      = ((fb_in - pid->last_fb_in) / dt);
+			pid->d_fb_in      = ((fb_in - pid->last_fb_in) / (float)pid->dt);
 		}
 
 
@@ -159,7 +160,7 @@ pid_return_t pid_task(pid_inst_t * const pid)
 		else
 		{
 			saturation_error = pid->last_output_sat - pid->last_output;
-			pid->i_component += ((pid->conf.ki * pid->error) + (pid->conf.kt * saturation_error)) * dt;
+			pid->i_component += ((pid->conf.ki * pid->error) + (pid->conf.kt * saturation_error)) * (float)pid->dt;
 		}
 
 		/****Calculate D component****/
@@ -414,6 +415,16 @@ float pid_get_d_component(const pid_inst_t pid)
 float pid_get_error(const pid_inst_t pid)
 {
 	return pid.error;
+}
+
+/******************************************************************************
+*  \brief Get dt
+*
+*  \note Time between PID runs, in ticks
+******************************************************************************/
+uint32_t pid_get_dt(const pid_inst_t pid)
+{
+	return pid.dt;
 }
 
 

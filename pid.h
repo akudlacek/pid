@@ -76,6 +76,7 @@ typedef struct pid_inst_t
 	float d_component;
 	float error;
 	uint32_t last_tick;
+	uint32_t dt;
 	float last_output;
 	float last_output_sat;
 } pid_inst_t;
@@ -109,6 +110,7 @@ float        pid_get_p_component    (const pid_inst_t pid);
 float        pid_get_i_component    (const pid_inst_t pid);
 float        pid_get_d_component    (const pid_inst_t pid);
 float        pid_get_error          (const pid_inst_t pid);
+uint32_t     pid_get_dt             (const pid_inst_t pid);
 
 
 #endif /* PID_H_ */
