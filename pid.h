@@ -57,10 +57,10 @@ typedef struct pid_conf_t
 	pid_mode_t pid_mode;
 
 	//Data pointers
-	float *input_ptr;
-	float *output_ptr;
-	const volatile float *setpoint_ptr;
-	const volatile uint32_t *tick_ptr;
+	volatile const float * input_ptr; //todo: rename feedback
+	volatile float * output_ptr;
+	volatile const float * setpoint_ptr;
+	volatile const uint32_t * tick_ptr;
 } pid_conf_t;
 
 typedef struct pid_inst_t
