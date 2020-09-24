@@ -57,10 +57,10 @@ typedef struct pid_conf_t
 	pid_mode_t pid_mode;
 
 	//Data pointers
-	volatile const float * input_ptr; //todo: rename feedback
-	volatile float * output_ptr;
-	volatile const float * setpoint_ptr;
-	volatile const uint32_t * tick_ptr;
+	volatile const float    * fb_in_ptr;    //feedback input
+	volatile       float    * output_ptr;   //output
+	volatile const float    * setpoint_ptr; //setpoint input
+	volatile const uint32_t * tick_ptr;     //time tick input
 } pid_conf_t;
 
 typedef struct pid_inst_t
@@ -69,8 +69,8 @@ typedef struct pid_inst_t
 	pid_conf_t conf;
 
 	//Dynamic data
-	float last_input;
-	float d_input;       //derivative of the input
+	float last_fb_in;
+	float d_fb_in;       //derivative of the feedback input
 	float p_component;
 	float i_component;
 	float d_component;
@@ -101,7 +101,7 @@ float        pid_get_ki             (const pid_inst_t pid);
 float        pid_get_kd             (const pid_inst_t pid);
 float        pid_get_kt             (const pid_inst_t pid);
 float        pid_get_d_filter       (const pid_inst_t pid);
-float        pid_get_d_input        (const pid_inst_t pid);
+float        pid_get_d_fb_in        (const pid_inst_t pid);
 float        pid_get_out_min        (const pid_inst_t pid);
 float        pid_get_out_max        (const pid_inst_t pid);
 pid_mode_t   pid_get_mode           (const pid_inst_t pid);

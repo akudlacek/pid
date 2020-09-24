@@ -51,7 +51,7 @@ void pid_get_config_defaults(pid_conf_t * const pid_conf)
 	pid_conf->out_max   = 0;
 	pid_conf->pid_mode  = MANUAL;
 
-	pid_conf->input_ptr    = 0;
+	pid_conf->fb_in_ptr    = 0;
 	pid_conf->output_ptr   = 0;
 	pid_conf->setpoint_ptr = 0;
 	pid_conf->tick_ptr     = 0;
@@ -67,7 +67,7 @@ pid_return_t pid_init(pid_inst_t * const pid, const pid_conf_t pid_conf)
 	pid_return_t pid_return;
 
 	/*NULL pointer check*/
-	if(pid_conf.input_ptr == 0 || pid_conf.output_ptr == 0 || pid_conf.setpoint_ptr == 0 || pid_conf.tick_ptr == 0)
+	if(pid_conf.fb_in_ptr == 0 || pid_conf.output_ptr == 0 || pid_conf.setpoint_ptr == 0 || pid_conf.tick_ptr == 0)
 	{
 		return NULL_POINTER;
 	}
@@ -76,8 +76,8 @@ pid_return_t pid_init(pid_inst_t * const pid, const pid_conf_t pid_conf)
 	pid->conf = pid_conf;
 
 	/*Inst*/
-	pid->last_input      = 0;
-	pid->d_input         = 0;
+	pid->last_fb_in      = 0;
+	pid->d_fb_in         = 0;
 	pid->p_component     = 0;
 	pid->i_component     = 0;
 	pid->d_component     = 0;
@@ -116,7 +116,7 @@ pid_return_t pid_init(pid_inst_t * const pid, const pid_conf_t pid_conf)
 pid_return_t pid_task(pid_inst_t * const pid)
 {
 	pid_return_t pid_return = MANUAL_MODE;
-	float input             = 0;
+	float fb_in             = 0;
 	float output            = 0;
 	uint32_t tick           = *pid->conf.tick_ptr;
 	float dt                = (float)(tick - pid->last_tick);
@@ -132,18 +132,18 @@ pid_return_t pid_task(pid_inst_t * const pid)
 	else if(pid->conf.pid_mode == AUTOMATIC)
 	{
 		/*Compute all the working error variables*/
-		input             = *pid->conf.input_ptr;
-		pid->error        = *pid->conf.setpoint_ptr - input;
+		fb_in             = *pid->conf.fb_in_ptr;
+		pid->error        = *pid->conf.setpoint_ptr - fb_in;
 
-		/****Calculate the filtered derivitive of the input****/
+		/****Calculate the filtered derivitive of the feedback input****/
 		if(pid->conf.d_filter > 0.0)
 		{
-			pid->d_input      -= pid->d_input / (pid->conf.d_filter + 1.0);
-			pid->d_input      += ((input - pid->last_input) / dt) / (pid->conf.d_filter + 1.0);
+			pid->d_fb_in      -= pid->d_fb_in / (pid->conf.d_filter + 1.0);
+			pid->d_fb_in      += ((fb_in - pid->last_fb_in) / dt) / (pid->conf.d_filter + 1.0);
 		}
 		else
 		{
-			pid->d_input      = ((input - pid->last_input) / dt);
+			pid->d_fb_in      = ((fb_in - pid->last_fb_in) / dt);
 		}
 
 
@@ -163,7 +163,7 @@ pid_return_t pid_task(pid_inst_t * const pid)
 		}
 
 		/****Calculate D component****/
-		pid->d_component = -1 * (pid->conf.kd * pid->d_input);
+		pid->d_component = -1 * (pid->conf.kd * pid->d_fb_in);
 
 		/*Component Limits*/
 		pid->p_component = PID_LIM(pid->p_component, pid->conf.p_min, pid->conf.p_max);
@@ -177,7 +177,7 @@ pid_return_t pid_task(pid_inst_t * const pid)
 		*pid->conf.output_ptr = PID_LIM(output, pid->conf.out_min, pid->conf.out_max);
 
 		/*Remember some variables for next time*/
-		pid->last_input      = input;
+		pid->last_fb_in      = fb_in;
 		pid->last_tick       = tick;
 		pid->last_output     = output;
 		pid->last_output_sat = *pid->conf.output_ptr;
@@ -278,9 +278,9 @@ void pid_set_mode(pid_inst_t * const pid, const pid_mode_t pid_mode)
 	if((pid->conf.pid_mode == MANUAL) && (pid_mode == AUTOMATIC))
 	{
 		pid->i_component      = *pid->conf.output_ptr;
-		pid->last_input       = *pid->conf.input_ptr;
+		pid->last_fb_in       = *pid->conf.fb_in_ptr;
 		pid->last_tick        = *pid->conf.tick_ptr;
-		pid->d_input          = 0;
+		pid->d_fb_in          = 0;
 	}
 
 	pid->conf.pid_mode = pid_mode;
@@ -337,13 +337,13 @@ float pid_get_d_filter(const pid_inst_t pid)
 }
 
 /******************************************************************************
-*  \brief Get d input
+*  \brief Get d feedback input
 *
-*  \note this is the filtered or not filtered input
+*  \note this is the filtered or not filtered feedback input
 ******************************************************************************/
-float pid_get_d_input(const pid_inst_t pid)
+float pid_get_d_fb_in(const pid_inst_t pid)
 {
-	return pid.d_input;
+	return pid.d_fb_in;
 }
 
 /******************************************************************************
